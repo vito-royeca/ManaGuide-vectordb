@@ -1,0 +1,18 @@
+matplotlib
+numpy
+pgvector
+picamera2
+pillow
+psycopg
+psycopg_c
+torch
+torchvision
+tqdm
+
+#python -m venv --system-site-packages venv
+#sudo apt install libxcb-xinerama0 libxcb-cursor0
+#sudo apt install libpq-dev libcap-dev python3-dev python3-picamera2 libavdevice-dev
+#pip install --upgrade pyqt5_tools
+
+# on Mac only:
+#export PATH=$PATH:/opt/homebrew/opt/libpq/bin
