@@ -1,14 +1,12 @@
 import os
 import sys
 
-# from matplotlib import cbook
 import psycopg
 from pgvector.psycopg import register_vector
 from PIL import Image
 import torch
 from torchvision import models, transforms
 from torchvision.models import ResNet18_Weights
-import matplotlib.pyplot as plt
 
 from image_processor import ImageProcessor
 
@@ -95,45 +93,6 @@ def show_results(image_path):
 
     # render_plot(rows)
     render_html(rows)
-
-def render_plot(rows):
-    fig, axs = plt.subplots(ncols=4, nrows=len(rows))
-    for irow, row in enumerate(rows):
-        path = row[0]
-        results = row[1]
-        
-        image = Image.open(path)
-        if len(rows) == 1:
-            axs[0].set_title("Query Image", fontsize=8)
-            axs[0].imshow(image)
-            axs[0].axis('off')
-        else:
-            axs[irow, 0].set_title("Query Image", fontsize=8)
-            axs[irow, 0].imshow(image)
-            axs[irow, 0].axis('off')
-        
-        for jresult, result in enumerate(results):
-            card_id = result[0]
-            distance = result[1]
-            
-            card_path = card_id
-            index = card_path.find("_")
-            card_path = card_path[:index] + "/" + card_path[index+1:]
-
-            index = card_path.find("_")
-            card_path = card_path[:index] + "/" + card_path[index+1:]
-
-            card_path = os.path.join(image_base, card_path, "normal.jpg")
-            card_image = Image.open(card_path)
-
-            if len(rows) == 1:
-                ax = axs[jresult + 1]
-            else:
-                ax = axs[irow, jresult + 1]
-            ax.imshow(card_image)
-            ax.set_title(f"{card_id}\n<-- {distance:.2f}", fontsize=8)
-            ax.set_axis_off()
-    plt.show()
 
 def render_html(rows):
     html = "<html><body><table border=\"1\"><tr><th>Query Image</th><th>Result 1</th><th>Result 2</th><th>Result 3</th></tr>"

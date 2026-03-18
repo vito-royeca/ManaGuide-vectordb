@@ -59,8 +59,6 @@ class ImageProcessor:
             self.output_path = os.path.join(tempfile.gettempdir(), os.path.basename(self.image_path) + "_02_marked.jpg")
             cv2.imwrite(self.output_path, image_copy)
 
-        if len(found_bounding_boxes) > 0:
-            print(f"Found {len(found_bounding_boxes)} markers for {os.path.basename(self.image_path)}")
         return found_bounding_boxes
 
     def crop_image(self, box_corners=None):

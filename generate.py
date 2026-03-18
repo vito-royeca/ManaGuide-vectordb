@@ -21,7 +21,7 @@ def init_model():
     global preprocess
 
     model = models.resnet18(weights=ResNet18_Weights.DEFAULT)
-    model.eval()  # Set to evaluation mode
+    model.eval()
     # Remove the final classification layer to get embeddings
     model = torch.nn.Sequential(*list(model.children())[:-1])
 
@@ -36,7 +36,6 @@ def init_model():
 def init_database():
     global connection
     connection = psycopg.connect(connection_string)
-    # Register the vector type with psycopg2
     register_vector(connection)
 
 def create_embeddings(image_path):
@@ -55,10 +54,15 @@ def create_cmimage(path):
     result = cursor.fetchone()
 
     if result is None or len(result) == 0:
-        print(f"Inserting... {card_id}")
-        embeddings = create_embeddings(path)
-        cursor.execute("INSERT INTO cmimage (cmcard, embeddings) VALUES (%s, %s)", (card_id, embeddings))
-        connection.commit()
+        # check if card exists in cmcard table before inserting
+        cursor.execute("SELECT new_id FROM cmcard WHERE new_id = (%s)", (card_id,))
+        result = cursor.fetchone()
+
+        if result is not None:
+            print(f"Inserting... {card_id}")
+            embeddings = create_embeddings(path)
+            cursor.execute("INSERT INTO cmimage (cmcard, embeddings) VALUES (%s, %s)", (card_id, embeddings))
+            connection.commit()
     else:
         print(f"Already exists... {card_id}")
     cursor.close()
@@ -70,8 +74,6 @@ def optimize_database():
     connection.commit()
 
 def process_images():
-    # Let's find all the images
-    print("Processing images...")
     for root, dirs, files in os.walk(image_base):
         for file in files:
             if file == "normal.jpg":
