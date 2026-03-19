@@ -71,7 +71,7 @@ def optimize_database():
     cursor.execute("CREATE INDEX cmcard_index_embeddings ON cmimage USING ivfflat (embeddings vector_l2_ops) WITH (lists = 100);")
     connection.commit()
 
-def process_images(image_path):
+def process_images(image_path, card_id=None):
     if os.path.isdir(image_path):
         for root, dirs, files in os.walk(image_path):
             for file in files:
@@ -80,18 +80,13 @@ def process_images(image_path):
                     card_id = path.split(os.path.sep)[-4] + "_" + path.split(os.path.sep)[-3] + "_" + path.split(os.path.sep)[-2]
                     create_cmimage(path, card_id)
 
-def process_image(image_path, card_id):
-    create_cmimage(image_path, card_id)
+    else:
+        create_cmimage(image_path, card_id)
 
 def main(image_path, card_id=None):
     init_model()
     init_database()
-
-    if os.path.isdir(image_path):
-        process_images()
-    else:
-        process_image(image_path, card_id)
-
+    process_images(image_path, card_id)
     optimize_database()
     connection.close()
 
