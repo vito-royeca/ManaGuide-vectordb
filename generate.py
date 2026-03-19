@@ -1,5 +1,6 @@
 import os
 import sys
+from datetime import datetime
 
 import psycopg
 from pgvector.psycopg import register_vector
@@ -46,23 +47,29 @@ def create_embeddings(image_path):
     return embedding.squeeze().numpy()
 
 def create_cmimage(path, card_id):
+    file_timestamp = datetime.fromtimestamp(os.path.getmtime(path)).astimezone(tz=None)
     cursor = connection.cursor()
 
-    cursor.execute("SELECT cmcard FROM cmimage WHERE cmcard = (%s)", (card_id,))
+    query = t"SELECT i.cmcard, i.date_updated FROM cmimage i LEFT JOIN cmcard c ON i.cmcard = c.new_id WHERE cmcard = {card_id}"
+    cursor.execute(query)
     result = cursor.fetchone()
 
     if result is None or len(result) == 0:
-        # check if card exists in cmcard table before inserting
-        cursor.execute("SELECT new_id FROM cmcard WHERE new_id = (%s)", (card_id,))
-        result = cursor.fetchone()
-
-        if result is not None:
-            print(f"Inserting... {card_id}")
-            embeddings = create_embeddings(path)
-            cursor.execute("INSERT INTO cmimage (cmcard, embeddings) VALUES (%s, %s)", (card_id, embeddings))
-            connection.commit()
+        print(f"Inserting... {card_id}")
+        embeddings = create_embeddings(path)
+        query = t"INSERT INTO cmimage (cmcard, embeddings, date_updated) VALUES ({card_id}, {embeddings}, {file_timestamp})"
+        cursor.execute(query)
+        connection.commit()
     else:
-        print(f"Already exists... {card_id}")
+        db_timestamp = result[1].astimezone(tz=None)
+        if file_timestamp != db_timestamp:
+            print(f"mismatch -  file: {file_timestamp} vs db: {db_timestamp} for card {card_id}")
+            embeddings = create_embeddings(path)
+            query = t"UPDATE cmimage SET embeddings = {embeddings}, date_updated = {file_timestamp} WHERE cmcard = {card_id}"
+            cursor.execute(query)
+            connection.commit()
+        else:
+            print(f"Already exists... {card_id}")
     cursor.close()
 
 def optimize_database():
