@@ -1,4 +1,6 @@
 import os
+import sys
+
 import psycopg
 from pgvector.psycopg import register_vector
 from PIL import Image
@@ -9,8 +11,6 @@ from torchvision.models import ResNet18_Weights
 # In terminal, run: export CONNECTION_STRING=postgres://[user]:[password]@[host]:[port]/[database]
 connection_string  = os.environ['CONNECTION_STRING']
 
-# image_base = "/mnt/managuide/images/cards/"
-image_base = "/Users/vitoroyeca/workspace/ManaGuide/mount_images/cards"
 model = None
 preprocess = None
 connection = None
@@ -45,9 +45,7 @@ def create_embeddings(image_path):
         embedding = model(image_tensor)
     return embedding.squeeze().numpy()
 
-
-def create_cmimage(path):
-    card_id = path.split(os.path.sep)[-4] + "_" + path.split(os.path.sep)[-3] + "_" + path.split(os.path.sep)[-2]
+def create_cmimage(path, card_id):
     cursor = connection.cursor()
 
     cursor.execute("SELECT cmcard FROM cmimage WHERE cmcard = (%s)", (card_id,))
@@ -73,20 +71,39 @@ def optimize_database():
     cursor.execute("CREATE INDEX cmcard_index_embeddings ON cmimage USING ivfflat (embeddings vector_l2_ops) WITH (lists = 100);")
     connection.commit()
 
-def process_images():
-    for root, dirs, files in os.walk(image_base):
-        for file in files:
-            if file == "normal.jpg":
-                path = os.path.join(root, file)
-                create_cmimage(path)
+def process_images(image_path):
+    if os.path.isdir(image_path):
+        for root, dirs, files in os.walk(image_path):
+            for file in files:
+                if file == "normal.jpg":
+                    path = os.path.join(root, file)
+                    card_id = path.split(os.path.sep)[-4] + "_" + path.split(os.path.sep)[-3] + "_" + path.split(os.path.sep)[-2]
+                    create_cmimage(path, card_id)
 
-def main():
+def process_image(image_path, card_id):
+    create_cmimage(image_path, card_id)
+
+def main(image_path, card_id=None):
     init_model()
     init_database()
-    process_images()
+
+    if os.path.isdir(image_path):
+        process_images()
+    else:
+        process_image(image_path, card_id)
+
     optimize_database()
     connection.close()
 
 # __name__
 if __name__=="__main__":
-    main()
+    if len(sys.argv) < 2:
+        print("Usage: python generate.py <image_path> <card_id>")
+        sys.exit(1)
+
+    image_path = sys.argv[1]
+    card_id = None
+
+    if len(sys.argv) >= 3:
+        card_id = sys.argv[2]
+    main(image_path, card_id)

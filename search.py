@@ -13,8 +13,8 @@ from image_processor import ImageProcessor
 # In terminal, run: export CONNECTION_STRING=postgres://[user]:[password]@[host]:[port]/[database]
 connection_string  = os.environ['CONNECTION_STRING']
 
-# image_base = "/mnt/managuide/images/cards/"
-image_base = "/Users/vitoroyeca/workspace/ManaGuide/mount_images/cards"
+image_base = "/mnt/managuide/images/cards/"
+#image_base = "/Users/vitoroyeca/workspace/ManaGuide/mount_images/cards"
 model = None
 preprocess = None
 connection = None
