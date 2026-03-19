@@ -55,11 +55,17 @@ def create_cmimage(path, card_id):
     result = cursor.fetchone()
 
     if result is None or len(result) == 0:
-        print(f"Inserting... {card_id}")
-        embeddings = create_embeddings(path)
-        query = t"INSERT INTO cmimage (cmcard, embeddings, date_updated) VALUES ({card_id}, {embeddings}, {file_timestamp})"
+        # check if card exists in cmcard table before inserting
+        query = t"SELECT new_id FROM cmcard WHERE new_id = {card_id}"
         cursor.execute(query)
-        connection.commit()
+        result = cursor.fetchone()
+
+        if result is not None:
+            print(f"Inserting... {card_id}")
+            embeddings = create_embeddings(path)
+            query = t"INSERT INTO cmimage (cmcard, embeddings, date_updated) VALUES ({card_id}, {embeddings}, {file_timestamp})"
+            cursor.execute(query)
+            connection.commit()
     else:
         db_timestamp = result[1].astimezone(tz=None)
         if file_timestamp != db_timestamp:
